@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>童盟时 · 滴滴式社区托管 | 时间银行·AI热力</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Leaflet 地图 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* ===== 红色淡红色系主题 · 完全重构 ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+        body { 
+            background: #fff0f0;  /* 淡红基调 */
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 16px; 
+        }
+        .demo-container { 
+            max-width: 1440px; 
+            width: 100%; 
+            background: rgba(255, 245, 245, 0.8);  /* 柔白透红 */
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px); 
+            border-radius: 40px; 
+            box-shadow: 0 30px 50px -12px rgba(190, 40, 40, 0.15); 
+            border: 1px solid rgba(255, 220, 220, 0.7); 
+            overflow: hidden; 
+        }
+
+        /* 导航栏 */
+        .navbar { 
+            background: rgba(255, 240, 240, 0.6); 
+            backdrop-filter: blur(8px); 
+            padding: 16px 28px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-bottom: 1px solid rgba(190, 60, 60, 0.08); 
+        }
+        .logo-area { display: flex; align-items: center; gap: 14px; }
+        .logo-icon { 
+            background: linear-gradient(145deg, #e11d48, #b91c1c);  /* 红渐变 */
+            width: 44px; 
+            height: 44px; 
+            border-radius: 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 24px; 
+            font-weight: 700; 
+            box-shadow: 0 10px 18px -5px rgba(225, 29, 72, 0.35); 
+        }
+        .logo-text { 
+            font-weight: 700; 
+            font-size: 24px; 
+            color: #2d1a1a; 
+            letter-spacing: -0.02em; 
+        }
+        .logo-text span { color: #e11d48; }  /* 红色强调 */
+        
+        .role-switcher { 
+            display: flex; 
+            gap: 6px; 
+            background: rgba(220, 100, 100, 0.04); 
+            padding: 5px; 
+            border-radius: 48px; 
+            border: 1px solid rgba(190, 40, 40, 0.1); 
+        }
+        .role-btn { 
+            padding: 8px 22px; 
+            border-radius: 40px; 
+            border: none; 
+            background: transparent; 
+            font-weight: 600; 
+            font-size: 14px; 
+            color: #7a4a4a; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+        }
+        .role-btn.active { 
+            background: white; 
+            color: #b91c1c; 
+            box-shadow: 0 6px 12px -4px rgba(180, 30, 30, 0.12); 
+        }
+        .user-profile { display: flex; align-items: center; gap: 20px; }
+        .balance-badge { 
+            background: linear-gradient(135deg, #fee2e2, #fff5f5); 
+            padding: 8px 20px; 
+            border-radius: 60px; 
+            font-weight: 700; 
+            color: #b91c1c; 
+            font-size: 15px; 
+            border: 1px solid rgba(225, 29, 72, 0.2); 
+        }
+        .notification-icon { 
+            font-size: 22px; 
+            color: #b08484; 
+            cursor: pointer; 
+        }
+
+        /* 主内容 */
+        .main-content { 
+            padding: 24px 28px; 
+            min-height: 580px; 
+            background: transparent; 
+            transition: opacity 0.2s; 
+        }
+
+        /* 地图卡片 */
+        .map-card { 
+            border-radius: 28px; 
+            overflow: hidden; 
+            margin-bottom: 24px; 
+            box-shadow: 0 15px 30px -8px rgba(180, 30, 30, 0.08); 
+            border: 2px solid white; 
+        }
+        #mapContainer { 
+            width: 100%; 
+            height: 300px; 
+            background: #ffe4e6;  /* 淡红底图背景 */
+            z-index: 1; 
+        }
+
+        /* 底部导航 */
+        .bottom-nav { 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; 
+            background: rgba(255, 240, 240, 0.75); 
+            backdrop-filter: blur(8px); 
+            padding: 12px 24px; 
+            border-top: 1px solid rgba(200, 80, 80, 0.05); 
+            margin-top: 20px; 
+            border-radius: 60px; 
+        }
+        .nav-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            color: #9e6a6a; 
+            font-size: 12px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            padding: 6px 18px; 
+            border-radius: 40px; 
+        }
+        .nav-item i { font-size: 22px; }
+        .nav-item.active { 
+            color: #b91c1c; 
+            background: rgba(185, 28, 28, 0.06); 
+        }
+
+        .section-title { 
+            font-size: 18px; 
+            font-weight: 700; 
+            margin: 20px 0 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            color: #3d2525; 
+        }
+        .grid-2col { 
+            display: grid; 
+            grid-template-columns: 1.5fr 1fr; 
+            gap: 24px; 
+        }
+        .card { 
+            background: rgba(255, 250, 250, 0.8); 
+            backdrop-filter: blur(5px); 
+            border-radius: 28px; 
+            padding: 24px; 
+            box-shadow: 0 12px 28px -8px rgba(160, 40, 40, 0.06); 
+            border: 1px solid rgba(255, 230, 230, 0.9); 
+            transition: transform 0.15s, box-shadow 0.15s; 
+        }
+        .card:hover { 
+            box-shadow: 0 20px 35px -10px rgba(180, 40, 40, 0.12); 
+            transform: translateY(-2px); 
+        }
+        .card-header { 
+            font-weight: 700; 
+            font-size: 18px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            color: #491e1e;
+        }
+        .card-header i { color: #e11d48; }  /* 图标红色调 */
+
+        .task-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px 0; 
+            border-bottom: 1px solid rgba(200, 60, 60, 0.06); 
+            cursor: pointer; 
+            transition: background 0.1s; 
+            border-radius: 16px; 
+            padding-left: 8px; 
+            padding-right: 8px; 
+        }
+        .task-item:hover { background: rgba(225, 80, 80, 0.03); }
+        .task-item:last-child { border-bottom: none; }
+        .task-info h4 { font-weight: 700; font-size: 16px; margin-bottom: 4px; color: #2c1a1a; }
+        .task-meta { 
+            font-size: 12px; 
+            color: #a77b7b; 
+            display: flex; 
+            gap: 10px; 
+        }
+
+        /* 按钮 — 红色系 */
+        .btn { 
+            padding: 10px 20px; 
+            border-radius: 36px; 
+            font-weight: 600; 
+            font-size: 14px; 
+            border: none; 
+            cursor: pointer; 
+            background: #fbe9e9; 
+            color: #6b3a3a; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.15s; 
+            box-shadow: 0 2px 4px rgba(180, 30, 30, 0.03); 
+        }
+        .btn-primary { 
+            background: #e11d48; 
+            color: white; 
+            box-shadow: 0 8px 16px -4px rgba(225, 29, 72, 0.45); 
+        }
+        .btn-primary:hover { background: #be123c; }
+        .btn-success { 
+            background: #b91c1c;   /* 深红成功色，与红色系融合 */
+            color: white; 
+            box-shadow: 0 6px 12px -3px rgba(185, 28, 28, 0.3);
+        }
+        .btn-outline { 
+            background: transparent; 
+            border: 1px solid #f1c5c5; 
+            color: #a52a2a;
+        }
+        .btn-outline:hover { background: #fff1f1; }
+        
+        .badge { 
+            background: #f1d7d7; 
+            padding: 4px 12px; 
+            border-radius: 30px; 
+            font-size: 12px; 
+            color: #8b3a3a; 
+        }
+
+        .match-bar { 
+            height: 6px; 
+            background: #f1d3d3; 
+            border-radius: 10px; 
+            margin: 8px 0; 
+        }
+        .match-fill { 
+            height: 6px; 
+            background: #e11d48;   /* 红色填充 */
+            border-radius: 10px; 
+            width: 0%; 
+        }
+
+        /* 模态框 */
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(120, 30, 30, 0.2); 
+            backdrop-filter: blur(6px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1000; 
+            visibility: hidden; 
+            opacity: 0; 
+            transition: 0.2s; 
+        }
+        .modal { 
+            background: white; 
+            border-radius: 36px; 
+            padding: 28px; 
+            max-width: 480px; 
+            width: 90%; 
+            box-shadow: 0 40px 60px -12px rgba(160, 30, 30, 0.25); 
+        }
+        .modal-header { 
+            font-weight: 700; 
+            font-size: 22px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            color: #601010;
+        }
+        .modal-close { cursor: pointer; font-size: 24px; color: #b77a7a; }
+
+        .footer-note { 
+            padding: 16px 28px; 
+            text-align: center; 
+            color: #a06a6a; 
+            border-top: 1px solid rgba(190, 50, 50, 0.05); 
+        }
+
+        .toast-tip { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: #2d1a1a; 
+            color: #ffe0e0; 
+            padding: 12px 24px; 
+            border-radius: 60px; 
+            font-weight: 500; 
+            z-index: 999; 
+            transition: opacity 0.2s; 
+            opacity: 0; 
+            pointer-events: none; 
+        }
+
+        /* 额外红色细节 */
+        .fa-chevron-right { color: #c96a6a; }
+        .btn i { margin-right: 4px; }
+        .role-switcher .role-btn:hover { color: #b91c1c; }
+    </style>
+</head>
+<body>
+<div class="demo-container">
+    <div class="navbar">
+        <div class="logo-area">
+            <div class="logo-icon">童</div>
+            <div class="logo-text"><span>童盟时</span> · 调度引擎</div>
+        </div>
+        <div class="role-switcher" id="roleSwitcher">
+            <button class="role-btn active" data-role="parent">👪 家长端</button>
+            <button class="role-btn" data-role="volunteer">🤝 志愿者端</button>
+            <button class="role-btn" data-role="admin">📊 管理端</button>
+        </div>
+        <div class="user-profile">
+            <div class="balance-badge" id="globalBalanceDisplay">💰 童盟时 248</div>
+            <i class="far fa-bell notification-icon" onclick="window.showToast('暂无新消息')"></i>
+        </div>
+    </div>
+
+    <div class="main-content" id="appContent"></div>
+
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-item active" data-view="home"><i class="fas fa-home"></i><span>首页</span></div>
+        <div class="nav-item" data-view="tasks"><i class="fas fa-tasks"></i><span>任务</span></div>
+        <div class="nav-item" data-view="messages"><i class="fas fa-comment"></i><span>消息</span></div>
+        <div class="nav-item" data-view="profile"><i class="fas fa-user"></i><span>我的</span></div>
+    </div>
+
+    <div class="footer-note">
+        <i class="fas fa-map-marked-alt"></i> CartoDB底图 · 实时定位 · 热力需求 · 时间银行闭环 · AI五维匹配
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="window.closeModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span id="modalTitle">详情</span>
+            <i class="fas fa-times modal-close" onclick="window.closeModal()"></i>
+        </div>
+        <div id="modalContent">加载中...</div>
+    </div>
+</div>
+<div class="toast-tip" id="toastTip"></div>
+
+<script>
+    (function(){
+        'use strict';
+        let currentRole = 'parent';
+        let currentView = 'home';
+        let tongmengBalance = 248;
+        let map = null;
+        let markers = [];
+
+        let tasks = [
+            { id: 1, title: '洪山街道党群 · 基础看护', coeff: 1.0, lat: 30.52, lng: 114.35, time: '16:00-18:00', status: 'available', credit: 98 },
+            { id: 2, title: '关东青少年空间 · 作业辅导', coeff: 1.2, lat: 30.51, lng: 114.42, time: '明日 15:30', status: 'available', credit: 92 },
+            { id: 3, title: '南湖邻里中心 · 科学探究', coeff: 1.5, lat: 30.48, lng: 114.38, time: '周六 14:00', status: 'available', credit: 88 },
+        ];
+        let myOngoingTasks = [];
+        let balanceRecords = [
+            { time: '10:30', desc: '科学探究课', amount: 18 },
+            { time: '昨天', desc: '兑换丝路悠扬', amount: -80 },
+        ];
+        const shopItems = [
+            { name: '亲属课程·丝路悠扬', cost: 80 },
+            { name: '科学实验材料包', cost: 45 },
+            { name: '社区书店8折券', cost: 30 },
+        ];
+        let adminDemands = [
+            { id: 'd1', community: '关东社区', slot: '今日 16:00', skill: '作业辅导', coeff: 1.2 },
+            { id: 'd2', community: '南湖邻里', slot: '周六 14:00', skill: '科学课程', coeff: 1.5 },
+        ];
+
+        const appContent = document.getElementById('appContent');
+        const roleBtns = document.querySelectorAll('.role-btn');
+        const globalBalanceSpan = document.getElementById('globalBalanceDisplay');
+        const navItems = document.querySelectorAll('.nav-item');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const toast = document.getElementById('toastTip');
+
+        function updateGlobalBalance() { globalBalanceSpan.innerHTML = `💰 童盟时 ${tongmengBalance}`; }
+        function addRecord(desc, amount) { balanceRecords.unshift({ time: '刚刚', desc, amount }); if(balanceRecords.length>8) balanceRecords.pop(); }
+        window.showToast = (msg) => { toast.style.opacity = 1; toast.innerText = msg; setTimeout(()=>toast.style.opacity=0, 2000); };
+
+        function initMap() {
+            const old = document.getElementById('mapContainer');
+            if (old) { const n = old.cloneNode(false); old.parentNode.replaceChild(n, old); n.id = 'mapContainer'; }
+            map = L.map('mapContainer').setView([30.5931, 114.3054], 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+                attribution: '&copy; CartoDB', subdomains: 'abcd', maxZoom: 19
+            }).addTo(map);
+            if (markers.length) { markers.forEach(m => map.removeLayer(m)); markers = []; }
+            const points = [
+                { lng: 114.35, lat: 30.52, name: '洪山党群' },
+                { lng: 114.42, lat: 30.51, name: '关东空间' },
+                { lng: 114.38, lat: 30.48, name: '南湖邻里' },
+            ];
+            // 红色标记 (本就红色，更加协调)
+            const redIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            });
+            points.forEach(p => {
+                const m = L.marker([p.lat, p.lng], { icon: redIcon }).addTo(map);
+                m.bindPopup(`<b>${p.name}</b><br>托管点·可预约`); markers.push(m);
+            });
+            if (currentRole === 'admin') {
+                [[30.52,114.35,0.8],[30.51,114.42,0.6],[30.48,114.38,0.9]].forEach(([lat,lng,i])=>{
+                    const c = L.circle([lat,lng], { color:'#dc2626', fillColor:'#ef4444', fillOpacity:i*0.2, radius:800 }).addTo(map);
+                    markers.push(c);
+                });
+            }
+        }
+
+        // 渲染不同视图 (红色系微调内嵌样式)
+        function renderHomeView() {
+            if (currentRole==='parent') {
+                return `
+                    <div class="map-card"><div id="mapContainer"></div></div>
+                    <div class="grid-2col">
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-map-pin" style="color:#e11d48;"></i> 附近托管点</div>
+                            <div class="task-item" onclick="window.showDetail('洪山党群中心','距500m，剩余6名。基础看护 16:00-18:00')"><div><h4>洪山党群中心</h4><span class="task-meta">500m · 剩余6名</span></div><i class="fas fa-chevron-right"></i></div>
+                            <div class="task-item" onclick="window.showDetail('关东青少年空间','距1.2km，剩余3名。作业辅导 明日15:30')"><div><h4>关东青少年空间</h4><span class="task-meta">1.2km · 剩余3名</span></div><i class="fas fa-chevron-right"></i></div>
+                            <div class="task-item" onclick="window.showDetail('南湖邻里中心','距1.8km，科学探究课 周六14:00')"><div><h4>南湖邻里中心</h4><span class="task-meta">1.8km · 剩余12名</span></div><i class="fas fa-chevron-right"></i></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-book-open"></i> 标准化课程库</div>
+                            <div class="task-item" onclick="window.showDetail('科学探究·生态瓶','四维文档：目标/流程/教具/评价。可授权复制。')"><span>科学探究·生态瓶</span><span class="badge">可授权</span></div>
+                            <div class="task-item" onclick="window.showDetail('文化传承·丝路悠扬','PBL项目式学习，丝绸之路民族交融。')"><span>丝路悠扬</span><span class="badge">PBL</span></div>
+                        </div>
+                    </div>
+                `;
+            } else if (currentRole==='volunteer') {
+                const available = tasks.filter(t=>t.status==='available');
+                const recordsHtml = balanceRecords.slice(0,5).map(r=>`<div style="display:flex;justify-content:space-between;"><span>${r.desc}</span><span style="color:${r.amount>0?'#b91c1c':'#b91c1c'};">${r.amount>0?'+':''}${r.amount}</span></div>`).join('');
+                return `
+                    <div class="map-card"><div id="mapContainer"></div></div>
+                    <div class="grid-2col">
+                        <div>
+                            <div class="card">
+                                <div class="card-header"><i class="fas fa-bolt"></i> 任务大厅</div>
+                                ${available.map(t=>`<div class="task-item" onclick="window.showTaskDetail(${t.id})"><div><h4>${t.title}</h4><span class="task-meta">${t.time} · 系数${t.coeff}</span></div><button class="btn btn-primary" onclick="event.stopPropagation();window.handleGrab(${t.id})">抢单</button></div>`).join('')}
+                            </div>
+                            <div class="card" style="margin-top:20px;">
+                                <div class="card-header"><i class="fas fa-spinner"></i> 进行中</div>
+                                ${myOngoingTasks.length===0?'<p style="color:#b77a7a;">暂无</p>':myOngoingTasks.map(t=>`<div class="task-item"><span>${t.title}</span><button class="btn btn-success" onclick="window.handleComplete(${t.id})">完成</button></div>`).join('')}
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-coins"></i> 时间银行 (${tongmengBalance})</div>
+                            ${recordsHtml}
+                            <div style="font-weight:700; margin:20px 0 12px; color:#712a2a;">兑换商城</div>
+                            ${shopItems.map(it=>`<div class="task-item"><span>${it.name} <span class="badge">${it.cost}时</span></span><button class="btn btn-outline" onclick="window.handleExchange('${it.name}',${it.cost})">兑换</button></div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="map-card"><div id="mapContainer"></div></div>
+                    <div class="grid-2col">
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-fire"></i> 社区需求热力图</div>
+                            <div style="display:flex; gap:12px; margin:8px 0 16px;"><span style="background:#fee2e2; padding:4px 12px; border-radius:20px; color:#a13131;">低</span><span style="background:#fca5a5; padding:4px 12px; border-radius:20px; color:#641e1e;">中</span><span style="background:#ef4444; padding:4px 12px; border-radius:20px; color:white;">高</span></div>
+                            <p>洪山街道需求密度TOP1，南湖次之。</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><i class="fas fa-tasks"></i> 待调度需求</div>
+                            ${adminDemands.map(d=>`<div class="task-item" onclick="window.showDemandDetail('${d.id}')"><span><strong>${d.community}</strong> ${d.skill} (${d.slot})</span><button class="btn btn-primary" onclick="event.stopPropagation();window.aiMatch('${d.id}')">AI派单</button></div>`).join('')}
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top:20px;" id="aiResultPanel">
+                        <div class="card-header"><i class="fas fa-microchip"></i> AI匹配结果</div>
+                        <p style="color:#a76a6a;">点击“AI派单”查看推荐志愿者。</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderTasksView() { return `<div class="card"><div class="card-header"><i class="fas fa-clipboard-list"></i> 我的任务 (${currentRole})</div><p class="task-meta">这里展示所有任务列表，功能开发中。可点击底部导航返回首页。</p></div>`; }
+        function renderMessagesView() { return `<div class="card"><div class="card-header"><i class="fas fa-envelope"></i> 消息中心</div><p>系统通知：您有新的课程更新。<br>志愿者张明完成了作业辅导。</p></div>`; }
+        function renderProfileView() { return `<div class="card"><div class="card-header"><i class="fas fa-user-circle"></i> 个人中心</div><p>姓名：李女士 / 张老师<br>童盟时余额：${tongmengBalance}<br>信用分：98</p></div>`; }
+
+        function renderContent() {
+            setTimeout(initMap, 30);
+            if (currentView === 'home') appContent.innerHTML = renderHomeView();
+            else if (currentView === 'tasks') appContent.innerHTML = renderTasksView();
+            else if (currentView === 'messages') appContent.innerHTML = renderMessagesView();
+            else if (currentView === 'profile') appContent.innerHTML = renderProfileView();
+            updateGlobalBalance();
+        }
+
+        // 交互
+        window.showDetail = (title,desc) => {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalContent').innerHTML = `<p>${desc}</p><br><button class="btn btn-primary" onclick="window.closeModal()">确定</button>`;
+            modalOverlay.style.visibility='visible'; modalOverlay.style.opacity=1;
+        };
+        window.closeModal = ()=>{ modalOverlay.style.visibility='hidden'; modalOverlay.style.opacity=0; };
+        window.showTaskDetail = (id)=>{ const t=tasks.find(x=>x.id===id); if(t) showDetail(t.title, `系数${t.coeff} · ${t.time} · 信用要求${t.credit}`); };
+        window.showDemandDetail = (id)=>{ const d=adminDemands.find(x=>x.id===id); if(d) showDetail(`${d.community}需求`, `技能:${d.skill} · 时段:${d.slot} · 系数:${d.coeff}`); };
+        
+        window.handleGrab = (id) => { const t=tasks.find(x=>x.id===id); if(!t||t.status!=='available') return; t.status='ongoing'; myOngoingTasks.push({id:t.id,title:t.title,coeff:t.coeff}); showToast('✅ 抢单成功！任务已进入进行中。'); renderContent(); };
+        window.handleComplete = (id) => { const idx=myOngoingTasks.findIndex(x=>x.id===id); if(idx===-1) return; const t=myOngoingTasks[idx]; const earned=Math.round(2*(t.coeff||1.2)*10); tongmengBalance+=earned; addRecord(`完成:${t.title}`,earned); myOngoingTasks.splice(idx,1); updateGlobalBalance(); showToast(`🎉 获得 ${earned} 童盟时`); renderContent(); };
+        window.handleExchange = (name,cost) => { if(tongmengBalance<cost){ showToast('❌ 余额不足'); return; } tongmengBalance-=cost; addRecord(`兑换${name}`,-cost); updateGlobalBalance(); showToast(`🎁 兑换成功，剩余 ${tongmengBalance} 童盟时`); renderContent(); };
+        window.aiMatch = (demandId) => {
+            const d=adminDemands.find(x=>x.id===demandId); if(!d) return;
+            const candidates=[{name:'张明',credit:98,dist:0.5,skillMatch:0.9,tongmeng:248,weight:94},{name:'李薇',credit:92,dist:1.2,skillMatch:1.0,tongmeng:156,weight:89},{name:'王芳',credit:85,dist:0.3,skillMatch:0.7,tongmeng:62,weight:76}];
+            const best=candidates.reduce((a,b)=>a.weight>b.weight?a:b);
+            const panel = document.getElementById('aiResultPanel');
+            if(panel) panel.innerHTML=`<div class="card-header"><i class="fas fa-microchip"></i> AI匹配 (${d.community}·${d.skill})</div>`+candidates.map(c=>`<div style="margin-bottom:16px;"><div style="display:flex;justify-content:space-between;"><span><strong>${c.name}</strong> 信用${c.credit}</span><span>${c.weight}%</span></div><div class="match-bar"><div class="match-fill" style="width:${c.weight}%;"></div></div><span class="task-meta">📏${c.dist}km · 技能${Math.round(c.skillMatch*100)}% · 童盟时${c.tongmeng}</span></div>`).join('')+`<div style="margin-top:20px;background:#fee2e2;padding:16px;border-radius:20px;color:#991b1b;">✅ 自动派单给 <strong>${best.name}</strong> (权重${best.weight}%)</div>`;
+            showToast(`已为${d.community}派单给${best.name}`);
+        };
+
+        function switchRole(r) { currentRole = r; roleBtns.forEach(b=>b.classList.toggle('active', b.dataset.role===r)); renderContent(); }
+        function switchView(view) { currentView = view; navItems.forEach(n=>n.classList.toggle('active', n.dataset.view===view)); renderContent(); }
+
+        roleBtns.forEach(b=>b.addEventListener('click', ()=>switchRole(b.dataset.role)));
+        navItems.forEach(n=>n.addEventListener('click', ()=>switchView(n.dataset.view)));
+        renderContent();
+    })();
+</script>
+</body>
+</html>
